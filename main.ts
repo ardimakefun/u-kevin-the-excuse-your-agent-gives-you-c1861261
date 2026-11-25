@@ -39,6 +39,19 @@ function main(): void {
   if (onDisk !== EXCUSE) {
     throw new Error("entry.txt on disk does not match the excuse");
   }
+
+  // Byte-level check: the file must be exactly the UTF-8 encoding of the
+  // excuse — no BOM, no trailing newline, no extra bytes. The gate counts
+  // characters, so a stray BOM would silently inflate the count.
+  const raw = readFileSync(outPath);
+  if (raw.length !== Buffer.byteLength(EXCUSE, "utf8")) {
+    throw new Error(
+      `entry.txt byte length ${raw.length} != ${Buffer.byteLength(EXCUSE, "utf8")}`
+    );
+  }
+  if (raw[0] === 0xef && raw[1] === 0xbb && raw[2] === 0xbf) {
+    throw new Error("entry.txt must not start with a UTF-8 BOM");
+  }
 }
 
 main();
